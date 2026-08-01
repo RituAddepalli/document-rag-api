@@ -18,7 +18,7 @@ A backend service that combines:
 | Database              | PostgreSQL 16 + [pgvector](https://github.com/pgvector/pgvector)    |
 | ORM                    | SQLAlchemy 2.0 (async, `asyncpg` driver)                            |
 | Auth                   | `python-jose` (JWT) + `passlib[bcrypt]` (password hashing)          |
-| Embeddings / LLM       | OpenAI API (`text-embedding-3-small`, `gpt-4o-mini`, both configurable) |
+| Embeddings / LLM       | Google Gemini API (`gemini-embedding-001`, `gemini-2.5-flash`, both configurable) |
 | Background jobs        | FastAPI `BackgroundTasks` (ingestion runs off the request path)     |
 | Caching (optional)     | Redis (wired up in Compose; hook point provided, disabled by default)|
 | Tests                  | Pytest + `httpx.AsyncClient`                                       |
@@ -48,15 +48,15 @@ app/
 │   └── routes/                  # auth.py, documents.py, chat.py, health.py
 ├── services/
 │   ├── chunking.py              # pure-function text chunker (unit tested)
-│   ├── embeddings.py            # OpenAI embeddings client wrapper
-│   ├── llm.py                   # OpenAI chat completion, incl. streaming
+│   ├── embeddings.py            # Gemini embeddings client wrapper
+│   ├── llm.py                   # Gemini chat completion, incl. streaming
 │   ├── retrieval.py             # pgvector cosine-similarity search
 │   └── ingestion.py             # orchestrates chunk -> embed -> persist (background job)
 ├── middleware/
 │   └── error_logging.py         # catches unhandled exceptions -> Postgres + JSON response
 └── tests/                      # pytest suite
 scripts/
-└── e2e_check.py                 # manual end-to-end script (signup -> ingest -> chat), OpenAI calls mocked
+└── e2e_check.py                 # manual end-to-end script (signup -> ingest -> chat), Gemini calls mocked
 ```
 
 ---
@@ -133,7 +133,7 @@ Requires Docker + Docker Compose.
 
 ```bash
 cp .env.example .env
-# then edit .env and set OPENAI_API_KEY
+# then edit .env and set GEMINI_API_KEY
 
 docker compose up --build
 ```
@@ -153,7 +153,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# edit .env: DATABASE_URL, SECRET_KEY, OPENAI_API_KEY
+# edit .env: DATABASE_URL, SECRET_KEY, GEMINI_API_KEY
 
 uvicorn app.main:app --reload
 ```
@@ -164,7 +164,7 @@ See `.env.example` for the full list with comments. At minimum you need:
 
 - `DATABASE_URL` — async Postgres connection string (`postgresql+asyncpg://...`)
 - `SECRET_KEY` — JWT signing secret (generate with `openssl rand -hex 32` for real deployments)
-- `OPENAI_API_KEY` — required for document ingestion and `/chat` (embeddings + LLM calls)
+- `GEMINI_API_KEY` — required for document ingestion and `/chat` (embeddings + LLM calls). Get a free key with no credit card at https://aistudio.google.com/apikey
 
 Everything else has sane defaults.
 
@@ -172,7 +172,7 @@ Everything else has sane defaults.
 
 ## 6. Design notes
 
-**Background ingestion.** `POST /documents/` returns `202 Accepted` immediately with `status: "pending"`; chunking, embedding, and persistence happen in a FastAPI `BackgroundTasks` job (`services/ingestion.py`), which updates the document's `status` to `processing` → `completed`/`failed` as it runs. Clients poll `GET /documents/{id}` to know when a document is ready to be queried. This keeps the ingest endpoint fast and avoids blocking on OpenAI API latency inside the request/response cycle. (For heavier production workloads, this is the natural place to swap in Celery/RQ + Redis or a Kafka consumer without touching the API surface — `process_document()` is already a self-contained, queueable unit of work.)
+**Background ingestion.** `POST /documents/` returns `202 Accepted` immediately with `status: "pending"`; chunking, embedding, and persistence happen in a FastAPI `BackgroundTasks` job (`services/ingestion.py`), which updates the document's `status` to `processing` → `completed`/`failed` as it runs. Clients poll `GET /documents/{id}` to know when a document is ready to be queried. This keeps the ingest endpoint fast and avoids blocking on Gemini API latency inside the request/response cycle. (For heavier production workloads, this is the natural place to swap in Celery/RQ + Redis or a Kafka consumer without touching the API surface — `process_document()` is already a self-contained, queueable unit of work.)
 
 **Auth-scoped retrieval.** Every chunk row carries an `owner_id`. The `/chat` similarity search filters on it directly (`WHERE owner_id = :current_user`), so one user's documents are never visible to another user's queries — verified explicitly in `scripts/e2e_check.py`.
 
@@ -205,7 +205,7 @@ pytest -v
 
 All 17 tests (11 unit + 6 API-level) pass against a real Postgres 16 + pgvector instance as of this submission.
 
-There's also `scripts/e2e_check.py`, a standalone script that walks the full user journey — signup, login, document ingestion, background job completion, RAG chat, and cross-user data isolation — against a real database, with OpenAI calls swapped for deterministic fakes so it runs without an API key. Useful for a from-scratch sanity check:
+There's also `scripts/e2e_check.py`, a standalone script that walks the full user journey — signup, login, document ingestion, background job completion, RAG chat, and cross-user data isolation — against a real database, with Gemini calls swapped for deterministic fakes so it runs without an API key. Useful for a from-scratch sanity check:
 
 ```bash
 python scripts/e2e_check.py

@@ -3,7 +3,7 @@ One-off manual verification script (not part of the pytest suite) that
 exercises the full user journey: signup -> login -> ingest document ->
 background chunking/embedding -> chat retrieval -> LLM answer.
 
-OpenAI calls are monkeypatched with deterministic fakes so this can run
+Gemini calls are monkeypatched with deterministic fakes so this can run
 without a real API key, while still exercising all the real DB/pgvector/
 retrieval code paths.
 """
@@ -12,7 +12,7 @@ import os
 import sys
 
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://rag_user:rag_password@127.0.0.1:5432/rag_e2e_db"
-os.environ["OPENAI_API_KEY"] = "sk-fake-for-e2e-script"
+os.environ["GEMINI_API_KEY"] = "fake-key-for-e2e-script"
 
 sys.path.insert(0, "/home/claude/rag-backend")
 
@@ -29,7 +29,7 @@ import app.services.llm as llm_module
 
 def fake_vector(seed_text: str) -> list[float]:
     rnd = random.Random(seed_text)
-    return [rnd.uniform(-1, 1) for _ in range(1536)]
+    return [rnd.uniform(-1, 1) for _ in range(768)]
 
 
 async def fake_embed_text(text_: str) -> list[float]:
