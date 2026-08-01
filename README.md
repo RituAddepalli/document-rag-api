@@ -259,11 +259,6 @@ All 17 tests (11 unit + 6 API-level) pass against a real Postgres 16 + pgvector 
 ```bash
 python scripts/e2e_check.py
 ```
-
-<!-- 📸 PLACEHOLDER: docs/images/pytest-output.png
-     Screenshot: terminal output of `pytest -v` showing all 17 tests passing -->
-![pytest output](docs/images/pytest-output.png)
-
 ---
 
 ## 8. What is implemented from "Good to Have"
