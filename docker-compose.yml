@@ -32,7 +32,7 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql+asyncpg://rag_user:rag_password@db:5432/rag_db
-      DATABASE_URL_SYNC: postgresql+psycopg2://rag_user:rag_password@db:5432/rag_db
+
       REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"

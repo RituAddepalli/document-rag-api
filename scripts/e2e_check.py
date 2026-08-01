@@ -14,7 +14,8 @@ import sys
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://rag_user:rag_password@127.0.0.1:5432/rag_e2e_db"
 os.environ["GEMINI_API_KEY"] = "fake-key-for-e2e-script"
 
-sys.path.insert(0, "/home/claude/rag-backend")
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import random
 

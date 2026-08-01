@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://rag_user:rag_password@localhost:5432/rag_db"
-    DATABASE_URL_SYNC: str = "postgresql+psycopg2://rag_user:rag_password@localhost:5432/rag_db"
+
 
     # Auth
     SECRET_KEY: str = "insecure-dev-secret-change-me"
@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     CHUNK_SIZE: int = 500
     CHUNK_OVERLAP: int = 50
     TOP_K: int = 4
+    MIN_SIMILARITY: float = 0.5
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"

@@ -27,8 +27,10 @@ async def chat(
     """
     top_k = payload.top_k or settings.TOP_K
 
+  
     query_embedding = await embed_text(payload.query)
-    matches = await search_similar_chunks(db, current_user.id, query_embedding, top_k)
+    raw_matches = await search_similar_chunks(db, current_user.id, query_embedding, top_k)
+    matches = [m for m in raw_matches if m[2] >= settings.MIN_SIMILARITY]
     context_texts = [chunk.content for chunk, _title, _score in matches]
 
     sources = [
