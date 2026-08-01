@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     EMBEDDING_MODEL: str = "gemini-embedding-001"
     EMBEDDING_DIM: int = 768
-    CHAT_MODEL: str = "gemini-2.5-flash"
+    CHAT_MODEL: str = "gemini-flash-latest"
 
     # RAG tuning
     CHUNK_SIZE: int = 500
